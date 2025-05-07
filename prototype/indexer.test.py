@@ -46,7 +46,7 @@ class TestIndexer(unittest.TestCase):
         
     def test_should_support_searching_fuzzy_phrases(self):
         search_phrase = "teh freq cause"
-        results = self.index.fuzzy_search(search_phrase)
+        results = self.index.fuzzy_search_phrase(search_phrase)
         self.assertTrue(len(results) > 0)
         
         corrected_phrase = "the freqs because"

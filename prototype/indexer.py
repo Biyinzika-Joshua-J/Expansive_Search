@@ -1,6 +1,8 @@
 import re
 from collections import defaultdict
 
+from fuzzy import leven
+
 class Indexer:
     def __init__(self):
         self.index = defaultdict(
@@ -117,7 +119,7 @@ class Indexer:
         
         return True
     
-    def fuzzy_search(self, phrase):
+    def fuzzy_search_phrase(self, phrase):
         return []
     
     def _levenshtein_distance(self, sequence_1, sequence_2):
