@@ -1,5 +1,6 @@
 import re
 from collections import defaultdict
+from itertools import product
 
 from fuzzy import leven
 
@@ -92,6 +93,7 @@ class Indexer:
             return []
         
         results = []
+        seen = set()
         
         entry = self.index[tokens[0]]
         
@@ -101,6 +103,12 @@ class Indexer:
         for idx, doc_id in enumerate(entry["doc_ids"]):
             for position in entry["positions"][idx]:
                 if self._match_phrase_at(doc_id, position, tokens):
+                    
+                    key = (doc_id, position, tuple(tokens))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    
                     result = {
                         "content": self.documents[doc_id]["content"],
                         "location": [position, position+len(tokens)]
@@ -119,11 +127,48 @@ class Indexer:
         
         return True
     
-    def fuzzy_search_phrase(self, phrase):
-        return []
+    def _fuzzy_match_term(self, word, threshold=50):
+        matches = []
+        
+        for candidate in self.index.keys():
+            score = leven.ratio(word, candidate)
+            
+            if score >= threshold:
+                matches.append((candidate, score))
+        
+        result = [word for word, _ in sorted(matches, key=lambda x: -x[1])]       
+        return result
     
-    def _levenshtein_distance(self, sequence_1, sequence_2):
-        pass
+    def fuzzy_search_phrase(self, phrase, threshold=50):
+        tokens = self._tokenize(phrase)
+        
+        if not tokens:
+            return []
+        
+        fuzzy_options = []
+        for token in tokens:
+            matches = self._fuzzy_match_term(token, threshold)
+            if not matches:
+                return []  
+            fuzzy_options.append(matches)
+        
+        phrase_variants = product(*fuzzy_options)
+        print(phrase_variants)
+        
+        results = []
+        for variant in phrase_variants:
+            print(variant)
+            phrase_variant = " ".join(variant)
+            search_results = self.search_phrase(phrase_variant)
+            
+            if search_results:
+                results.extend(search_results)
+           
+            
+        return results
+            
+            
+    
     
 if __name__ == '__main__':
     indexer = Indexer()
@@ -133,7 +178,7 @@ if __name__ == '__main__':
     indexer.add("doc3", "dad is testing the freqs")
     indexer.add("doc4", "mom is testing the freqs")
 
-    results = indexer.search_phrase('freqs')
+    results = indexer.fuzzy_search_phrase('teh freqs because')
     
 
     print('=========Results================')
