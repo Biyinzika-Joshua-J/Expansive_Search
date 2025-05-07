@@ -117,6 +117,12 @@ class Indexer:
         
         return True
     
+    def fuzzy_search(self, phrase):
+        return []
+    
+    def _levenshtein_distance(self, sequence_1, sequence_2):
+        pass
+    
 if __name__ == '__main__':
     indexer = Indexer()
 
