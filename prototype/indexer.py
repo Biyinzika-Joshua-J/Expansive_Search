@@ -76,12 +76,46 @@ class Indexer:
         return True
      
     
-    def get(): 
-        pass
+    def get(self, term): 
+        term = term.lower()
+        return self.index.get(term, None)
     
-    def fetchOne():
-        pass
+    def fetchOne(self, doc_id):
+        return self.documents[doc_id]["content"]
     
+    def search_phrase(self, phrase):
+        tokens = self._tokenize(phrase)
+        
+        if not tokens:
+            return []
+        
+        results = []
+        
+        entry = self.index[tokens[0]]
+        
+        if not entry:
+            return []
+        
+        for idx, doc_id in enumerate(entry["doc_ids"]):
+            for position in entry["positions"][idx]:
+                if self._match_phrase_at(doc_id, position, tokens):
+                    result = {
+                        "content": self.documents[doc_id]["content"],
+                        "location": [position, position+len(tokens)]
+                    }
+                    results.append(result)
+        
+        return results
+    
+    def _match_phrase_at(self, doc_id, start_position, words):
+        document_tokens = self.documents[doc_id]["tokens"]
+        
+        for offeset, word in enumerate(words):
+            offset_position = start_position + offeset
+            if offset_position >= len(document_tokens) or document_tokens[offset_position] != word:
+                return False 
+        
+        return True
     
 if __name__ == '__main__':
     indexer = Indexer()
@@ -91,14 +125,10 @@ if __name__ == '__main__':
     indexer.add("doc3", "dad is testing the freqs")
     indexer.add("doc4", "mom is testing the freqs")
 
-    print(indexer.index)
+    results = indexer.search_phrase('freqs')
+    
 
-    indexer.delete('doc1')
-    indexer.delete('doc2')
-    indexer.delete('doc3')
-    indexer.delete('doc4')
-
-    print('=========After deleting all objects================')
+    print('=========Results================')
 
 
-    print(indexer.index)
+    print(results)

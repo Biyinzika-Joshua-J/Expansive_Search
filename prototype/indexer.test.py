@@ -36,6 +36,14 @@ class TestIndexer(unittest.TestCase):
         
         self.assertEqual(self.index.documents["doc1"]["content"], new_content)
         
+    def test_should_search_phrases(self):
+        search_phrase = "the freqs because"
+        results = self.index.search_phrase(search_phrase)
+        self.assertTrue(len(results) > 0)
+        
+        first_result_content = results[0]["content"]
+        self.assertIn(search_phrase, first_result_content)
+        
         
     
         
