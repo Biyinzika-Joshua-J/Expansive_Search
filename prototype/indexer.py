@@ -81,6 +81,11 @@ class Indexer:
     
     def get(self, term): 
         term = term.lower()
+        matches = self._fuzzy_match_term(term)
+        
+        if len(matches) > 0:
+            term = matches[0]
+        
         return self.index.get(term, None)
     
     def fetchOne(self, doc_id):
@@ -153,7 +158,7 @@ class Indexer:
             fuzzy_options.append(matches)
         
         phrase_variants = product(*fuzzy_options)
-        print(phrase_variants)
+        # print(phrase_variants)
         
         results = []
         for variant in phrase_variants:
@@ -166,6 +171,47 @@ class Indexer:
            
             
         return results
+    
+    
+    def boolean_search(self, query):
+        tokens = self._tokenize(query)
+        result_set = set()
+        current_operation = None
+        negate_next = False
+        
+        all_docs = set(self.documents.keys())
+        
+        i = 0
+        while i < len(tokens):
+            token = tokens[i]
+            
+            if token == 'and':
+                current_operation = 'AND'
+            elif token == 'or':
+                current_operation = 'OR'
+            elif token == 'not':
+                negate_next = True
+            else:
+                term_docs = set(self.get(token)["doc_ids"]) if self.get(token) else set()
+                
+                if negate_next:
+                    term_docs = all_docs - term_docs
+                    negate_next = False
+                    
+                if not result_set:
+                    result_set = term_docs
+                elif current_operation == 'AND':
+                    result_set &= term_docs
+                elif current_operation == 'OR':
+                    result_set |= term_docs
+                else:
+                    result_set &= term_docs
+                    
+                current_operation = None
+            
+            i += 1
+        
+        return [self.documents[doc_id]["content"] for doc_id in result_set]
             
             
     
@@ -175,10 +221,10 @@ if __name__ == '__main__':
 
     indexer.add("doc1", "this is testing the freqs because freqs matter")
     indexer.add("doc2", "that is testing the freqs")
-    indexer.add("doc3", "dad is testing the freqs")
-    indexer.add("doc4", "mom is testing the freqs")
+    indexer.add("doc3", "dad is testing the freqs today")
+    indexer.add("doc4", "mom is testing the freqs today")
 
-    results = indexer.fuzzy_search_phrase('teh freqs because')
+    results = indexer.boolean_search('freq NOT matter NOT mom NOT dad')
     
 
     print('=========Results================')

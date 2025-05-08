@@ -6,8 +6,8 @@ class TestIndexer(unittest.TestCase):
         self.index = Indexer()
         self.index.add("doc1", "this is testing the freqs because freqs matter")
         self.index.add("doc2", "that is testing the freqs")
-        self.index.add("doc3", "dad is testing the freqs")
-        self.index.add("doc4", "mom is testing the freqs")
+        self.index.add("doc3", "dad is testing the freqs today")
+        self.index.add("doc4", "mom is testing the freqs today")
         
     def test_should_generate_tokens_from_text(self):
         tokens = self.index._tokenize("this is, text;")
@@ -52,6 +52,48 @@ class TestIndexer(unittest.TestCase):
         corrected_phrase = "mom is"
         first_result_content = results[0]["content"]
         self.assertIn(corrected_phrase, first_result_content)
+        
+    def test_should_support_boolean_search_by_single_word(self):
+        # intersection
+        query = "today AND testing AND freqs"
+        results = self.index.boolean_search(query)
+        
+        self.assertTrue(len(results) >= 2)
+        
+        for result in results:
+            self.assertIn("today", result)
+            self.assertIn("testing", result)
+            self.assertIn("freqs", result)
+            
+        # union
+        query = "that OR matter"
+        results = self.index.boolean_search(query)
+        
+        self.assertTrue(len(results) >= 2)
+        
+        for result in results:
+            if 'that' not in result:
+                self.assertFalse("that" in result)
+                
+            if 'matter' not in result:
+                self.assertFalse("matter" in result)
+                
+        # Negation
+        query = "freq NOT matter NOT mom NOT dad"
+        results = self.index.boolean_search(query)
+        
+        self.assertTrue(len(results) >= 1)
+        
+        for result in results:
+            self.assertTrue('matter' not in result)
+            self.assertTrue('mom' not in result)
+            self.assertTrue('dad' not in result)
+            self.assertTrue('freqs' in result)
+            
+        
+            
+        
+        
         
     
         
