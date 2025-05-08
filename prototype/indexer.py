@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from itertools import product
 
-from fuzzy import leven
+from prototype.fuzzy_score_calculator import leven
 
 class Indexer:
     def __init__(self):
